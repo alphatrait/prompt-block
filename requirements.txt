@@ -1,0 +1,5 @@
+Flask
+Flask-Bcrypt
+Flask-Session
+pymongo
+python-dotenv

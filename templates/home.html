@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Your prompt App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!-- Replace slim version with full version of jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <style>
+
+    </style>
+
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Your Prompt App</a>
+        <div class="navbar-nav">
+            <a class="nav-item nav-link" href="#" onclick="logoutUser()">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12 mb-2">
+                <h2>Welcome to Your prompt App</h2>
+                <p class="lead">A simple app to create and view prompts.</p>
+
+                <!-- prompt Form -->
+                <form id="promptForm">
+                    <div class="form-group">
+                        <label for="promptName">prompt Name</label>
+                        <input type="text" class="form-control" id="promptName" placeholder="Enter prompt name">
+                    </div>
+                    <div class="form-group">
+                        <label for="promptDescription">Prompt Description</label>
+                        <input type="text" class="form-control" id="promptDescription"
+                            placeholder="Enter prompt description">
+                    </div>
+                    <div class="form-group">
+                        <label for="promptContent">prompt Content</label>
+                        <textarea class="form-control" id="promptContent" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+            <div class="container mt-4" id="promptsContainer">
+                <div class="row" id="promptsRow">
+                    <!-- prompts will be appended here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#promptForm').on('submit', function (e) {
+                e.preventDefault();
+
+                var promptName = $('#promptName').val();
+                var promptContent = $('#promptContent').val();
+                var promptDescription = $('#promptDescription').val();
+
+                if (!isValidPromptName(promptName)) {
+                    alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
+                    return; // Stop the form submission
+                }
+
+
+                $.ajax({
+                    url: '/api/prompt',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        'name': promptName,
+                        'content': promptContent,
+                        'description': promptDescription,
+                    }),
+                    success: function (response) {
+
+                        console.log('prompt saved:', response);
+                        // Clear the form fields
+                        $('#promptName').val('');
+                        $('#promptContent').val('');
+                        $('#promptDescription').val('');
+                        // Fetch and display prompts again to include the new prompt
+                        fetchAndDisplayPrompts();
+
+                    },
+                    error: function (error) {
+                        console.log('Error:', error);
+                    }
+                });
+            });
+        });
+
+        function fetchAndDisplayPrompts() {
+            $.ajax({
+                url: '/api/prompts',
+                type: 'GET',
+                success: function (prompts) {
+                    $('#promptsRow').empty();
+                    prompts.forEach(function (prompt, index) {
+                        var fullContent = prompt.content;
+                        var truncatedContent = prompt.content.substring(0, 100) + '...';
+                        var isLongPrompt = prompt.content.length > 100;
+                        var promptCard = `
+                    <div class="col-md-12 mb-2">
+                        <div class="card h-200">
+                            <div class="card-body d-flex flex-column">
+                                <h3 class="card-title" id="promptName${index}">${prompt.name}</h3>
+                                <h5 class="card-title" id="promptDescription${index}">${prompt.description}</h5>
+                                <p class="card-text" id="promptContent${index}" data-full-content="${fullContent}" data-truncated-content="${truncatedContent}">
+                                    ${truncatedContent}
+                                </p>
+                                <div id="menuOptions${index}" style="display: none;">
+                                    ${isLongPrompt ? `<button class="btn btn-info mt-auto" onclick="togglePromptContent(${index})" id="toggleButton${index}">Expand</button>` : ''}
+                                    <button class="btn btn-primary mt-2" onclick="showEditForm(${index})">Edit</button>
+                                    <button class="btn btn-danger mt-2" onclick="deletePrompt('${prompt._id}')">Delete</button>
+                                </div>
+                                <div id="editForm${index}" style="display: none;">
+                                    <input type="text" id="editDescription${index}" class="form-control mb-2" style="display:none;">
+                                    <textarea id="editContent${index}" class="form-control mb-2">${prompt.content}</textarea>
+                                    <button class="btn btn-success" onclick="updatePrompt('${prompt._id}', ${index})">Save</button>
+                                    <button class="btn btn-warning" onclick="closeEditForm(${index})">Close without saving</button>
+                                </div>
+                                <button id="menuButton${index}" class="btn btn-secondary mt-2" onclick="toggleMenuOptions(${index})">Menu</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                        $('#promptsRow').append(promptCard);
+                    });
+                },
+                error: function (error) {
+                    console.log('Error fetching prompts:', error);
+                }
+            });
+        }
+
+        function showEditForm(index) {
+            $("#editForm" + index).show();
+            $("#menuOptions" + index).hide();
+            $("#toggleButton" + index).hide();
+            $("#menuButton" + index).hide();
+            $("#promptDescription" + index).hide();
+            $("#promptContent" + index).hide();
+
+            var currentDescription = $("#promptDescription" + index).text();
+            var currentContent = $("#promptContent" + index).data("full-content");
+
+            $("#editDescription" + index).val(currentDescription).show(); // Show and set value for editDescription
+            $("#editContent" + index).val(currentContent);
+        }
+
+        function toggleMenuOptions(index) {
+            $("#menuOptions" + index).toggle();
+        }
+
+        function closeEditForm(index) {
+            $("#editForm" + index).hide();
+            $("#promptName" + index).show();
+            $("#promptContent" + index).show();
+            if ($("#promptContent" + index).text().length > 100) {
+                $("#toggleButton" + index).show();
+            }
+            $("#menuOptions" + index).hide();
+            $("#menuButton" + index).show();
+            $("#promptDescription" + index).show();
+        }
+
+        function togglePromptContent(index) {
+            var contentP = $("#promptContent" + index);
+            var isExpanded = contentP.text().includes('...'); // Check if the text is truncated
+
+            if (isExpanded) {
+                contentP.text(contentP.data("full-content"));
+                $("#toggleButton" + index).text("Hide");
+            } else {
+                contentP.text(contentP.data("truncated-content"));
+                $("#toggleButton" + index).text("Expand");
+            }
+        }
+
+        function updatePrompt(promptId, index) {
+            var newName = $("#editName" + index).val();
+            var newContent = $("#editContent" + index).val();
+            var newDescription = $("#editDescription" + index).val();
+
+            $.ajax({
+                url: '/api/prompt/' + promptId,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'name': newName,
+                    'content': newContent,
+                    'description': newDescription,
+                }),
+                success: function (response) {
+                    console.log('Prompt updated:', response);
+                    fetchAndDisplayPrompts(); // Refresh the prompts
+                },
+                error: function (error) {
+                    console.log('Error:', error);
+                }
+            });
+        }
+
+        function isValidPromptName(name) {
+            const regex = /^[a-zA-Z0-9_-]+$/;
+            return regex.test(name);
+        }
+
+
+        function deletePrompt(promptId) {
+            var confirmation = confirm("Are you sure you want to delete this prompt? This action is irreversible.");
+
+            if (confirmation) {
+                $.ajax({
+                    url: '/api/prompt/' + promptId,
+                    type: 'DELETE',
+                    success: function (response) {
+                        console.log('Prompt deleted:', response);
+                        fetchAndDisplayPrompts(); // Refresh the prompts
+                    },
+                    error: function (error) {
+                        console.log('Error:', error);
+                    }
+                });
+            } else {
+                console.log('Deletion cancelled');
+            }
+        }
+
+
+        $(document).ready(function () {
+            // Fetch and display prompts when the page loads
+            fetchAndDisplayPrompts();
+
+            // ... existing code for form submission ...
+        });
+
+        function logoutUser() {
+            $.ajax({
+                url: '/logout',
+                type: 'GET',
+                success: function (response) {
+                    window.location.href = '/login';  // Redirect to login page
+                },
+                error: function (error) {
+                    console.log('Logout failed:', error);
+                }
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>
