@@ -3,3 +3,5 @@ Flask-Bcrypt
 Flask-Session
 pymongo
 python-dotenv
+flask_pymongo
+gunicorn
