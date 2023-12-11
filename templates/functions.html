@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Your prompt App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!-- Replace slim version with full version of jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.6/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.6/purify.min.js"></script>
+
+    <style>
+
+    </style>
+
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Your App</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Prompts</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/functions">Functions</a>
+                </li>
+            </ul>
+        </div>
+        <div class="ml-auto">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="logoutUser()">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 style="margin-bottom:30px;">Manage Your Functions</h2>
+        <!-- Function Form -->
+        <form id="functionForm">
+            <!-- Function -->
+            <h4>Define your function</h4>
+            <div class="form-group">
+                <input type="text" class="form-control" id="functionName" placeholder="Enter function name">
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-control" id="functionDescription"
+                    placeholder="Enter function description">
+            </div>
+
+            <!-- Parameters -->
+            <h4 style="margin-top:30px;">Parameters</h4>
+            <div class="form-group">
+                <label for="parameterType">Type</label>
+                <select class="form-control" id="parameterType">
+                    <option>Object</option>
+                    <!-- Add other options as needed -->
+                </select>
+            </div>
+
+            <!-- Properties -->
+            <h4 style="margin-top:30px;">Properties</h4>
+            <div id="propertiesSection">
+                <!-- Dynamic properties will be added here -->
+            </div>
+            <div style="margin:20px 0;">
+
+                <button type="button" class="btn btn-info" onclick="addNewProperty()">Add New Property</button>
+            </div>
+            <!-- Submit -->
+            <div style="margin-bottom:100px;">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+        <!-- After the form in your HTML -->
+        <div class="container mt-4" id="functionsContainer">
+            <div class="row" id="functionsRow">
+                <!-- Function cards will be appended here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addNewProperty() {
+            var propertiesSection = document.getElementById('propertiesSection');
+            var propertyIndex = document.getElementsByClassName('property').length;
+            var propertyDiv = document.createElement('div');
+            propertyDiv.className = 'property';
+            propertyDiv.id = 'property' + propertyIndex;
+
+            propertyDiv.innerHTML = `
+                <div class="form-group">
+                    <label>Property Name</label>
+                    <input type="text" class="form-control propertyName" placeholder="Enter property name">
+                </div>
+                <div class="form-group">
+                    <label>Property Type</label>
+                    <select class="form-control propertyType">
+                        <option>string</option>
+                        <option>number</option>
+                        <option>array</option>
+                        <!-- Add other options as needed -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Property Description</label>
+                    <input type="text" class="form-control propertyDescription" placeholder="Enter property description">
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input propertyRequired">
+                    <label class="form-check-label">Required</label>
+                </div>
+                <button type="button" class="btn btn-danger" onclick="removeProperty('${propertyIndex}')">Remove</button>
+                `;
+
+            propertiesSection.appendChild(propertyDiv);
+        }
+
+        function removeProperty(index) {
+            var propertyElement = document.getElementById('property' + index);
+            if (propertyElement) {
+                propertyElement.parentNode.removeChild(propertyElement);
+            }
+        }
+
+
+        $('#functionForm').on('submit', function (e) {
+            e.preventDefault();
+
+            var functionName = $('#functionName').val();
+            var functionDescriptionRaw = $('#functionDescription').val();
+            var parameterType = $('#parameterType').val();
+            var functionDescription = DOMPurify.sanitize(functionDescriptionRaw);
+
+
+            if (!isValidPromptName(functionName)) {
+                    alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
+                    return; // Stop the form submission
+                }
+
+            // Collect properties
+            var properties = [];
+            $('.property').each(function () {
+                var propertyName = $(this).find('.propertyName').val();
+                var propertyType = $(this).find('.propertyType').val();
+                var propertyDescription = $(this).find('.propertyDescription').val();
+                var propertyRequired = $(this).find('.propertyRequired').is(':checked');
+                
+                if (!isValidPromptName(propertyName)) {
+                    alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
+                    return; // Stop the form submission
+                }
+
+                if (!isValidPromptName(propertyDescription)) {
+                    alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
+                    return; // Stop the form submission
+                }
+
+
+                properties.push({
+                    name: propertyName,
+                    type: propertyType,
+                    description: propertyDescription,
+                    required: propertyRequired
+                });
+            });
+
+            // Construct function data
+            var functionData = {
+                name: functionName,
+                description: functionDescription,
+                parameterType: parameterType,
+                properties: properties
+            };
+
+            // Use AJAX to send data to the server
+            $.ajax({
+                url: '/api/function',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(functionData),
+                success: function (response) {
+                    console.log('Function saved:', response);
+                    document.getElementById('functionForm').reset();
+                    var propertiesSection = document.getElementById('propertiesSection');
+                    propertiesSection.innerHTML = '';
+                    fetchAndDisplayFunctions();
+                },
+                error: function (error) {
+                    console.log('Error:', error);
+                }
+            });
+        });
+
+        function fetchAndDisplayFunctions() {
+            $.ajax({
+                url: '/api/functions',
+                type: 'GET',
+                success: function (functions) {
+                    var functionsRow = document.getElementById('functionsRow');
+                    functionsRow.innerHTML = ''; // Clear existing content
+
+                    functions.forEach(function (functionData, index) {
+                        var propertiesHtml = '';
+                        if (Array.isArray(functionData.properties)) {
+                            functionData.properties.forEach(function (property) {
+                                // Add a red asterisk for required properties
+                                var requiredMark = property.required ? '<span style="color: red;">*</span>' : '';
+                                propertiesHtml += `<p>${property.name}: ${property.type} - ${property.description} ${requiredMark}</p>`;
+                            });
+                        }
+
+                        var functionCard = `
+                    <div class="col-md-12 mb-2">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">${functionData.name}</h5>
+                                <p class="card-text">${functionData.description}</p>
+                                <div id="functionDetails${index}" style="display: none;">
+                                    <p><strong>Parameter Type:</strong> ${functionData.parameterType}</p>
+                                    <div><strong>Properties:</strong> ${propertiesHtml}</div>
+                                </div>
+                                <button class="btn btn-info" onclick="toggleFunctionDetails('functionDetails${index}')">Expand</button>
+                                <button class="btn btn-danger" onclick="deleteFunction('${functionData._id}')">Delete</button>
+                            </div>
+                        </div>
+                    </div>`;
+                        functionsRow.innerHTML += functionCard;
+                    });
+                },
+                error: function (error) {
+                    console.log('Error fetching functions:', error);
+                }
+            });
+        }
+
+
+        function toggleFunctionDetails(elementId) {
+            var detailsElement = document.getElementById(elementId);
+            var buttonElement = detailsElement ? detailsElement.nextElementSibling : null;
+
+            if (detailsElement) {
+                if (detailsElement.style.display === 'none') {
+                    detailsElement.style.display = 'block';
+                    if (buttonElement) {
+                        buttonElement.textContent = 'Hide';
+                    }
+                } else {
+                    detailsElement.style.display = 'none';
+                    if (buttonElement) {
+                        buttonElement.textContent = 'Expand';
+                    }
+                }
+            }
+        }
+
+
+        function deleteFunction(functionId) {
+            var confirmation = confirm("Are you sure you want to delete this function? This action is irreversible.");
+
+            if (confirmation) {
+                $.ajax({
+                    url: `/api/function/${functionId}`,
+                    type: 'DELETE',
+                    success: function (response) {
+                        console.log('Function deleted:', response);
+                        fetchAndDisplayFunctions(); // Refresh the function list
+                    },
+                    error: function (error) {
+                        console.log('Error:', error);
+                    }
+                });
+            }
+        }
+
+        function isValidPromptName(name) {
+            const regex = /^[a-zA-Z0-9_-]+$/;
+            return regex.test(name);
+        }
+
+        // Call this when the page loads
+        $(document).ready(function () {
+            fetchAndDisplayFunctions();
+        });
+
+    </script>
+</body>
+
+</html>

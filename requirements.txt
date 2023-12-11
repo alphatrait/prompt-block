@@ -5,3 +5,5 @@ pymongo
 python-dotenv
 flask_pymongo
 gunicorn
+collections
+bleach

@@ -13,6 +13,15 @@
     <!-- Bootstrap JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.6/purify.min.js"></script>
+
+
+    <!-- Include stylesheet -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+    <!-- Include the Quill library -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
     <style>
 
     </style>
@@ -21,11 +30,30 @@
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Your Prompt App</a>
-        <div class="navbar-nav">
-            <a class="nav-item nav-link" href="#" onclick="logoutUser()">Logout</a>
+        <a class="navbar-brand" href="#">Your App</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Prompts</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/functions">Functions</a>
+                </li>
+            </ul>
+        </div>
+        <div class="ml-auto">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="logoutUser()">Logout</a>
+                </li>
+            </ul>
         </div>
     </nav>
+
 
     <div class="container mt-4">
         <div class="row">
@@ -46,7 +74,7 @@
                     </div>
                     <div class="form-group">
                         <label for="promptContent">prompt Content</label>
-                        <textarea class="form-control" id="promptContent" rows="3"></textarea>
+                        <div id="promptContent" class="form-control" style="height: 200px;"></div>
                     </div>
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
@@ -61,12 +89,20 @@
 
     <script>
         $(document).ready(function () {
+
+            var quill = new Quill('#promptContent', {
+                theme: 'snow'
+            });
+
+
             $('#promptForm').on('submit', function (e) {
                 e.preventDefault();
 
                 var promptName = $('#promptName').val();
                 var promptContent = $('#promptContent').val();
                 var promptDescription = $('#promptDescription').val();
+                var promptContentRaw = quill.root.innerHTML; // Get HTML content from Quill editor
+                var promptContent = DOMPurify.sanitize(promptContentRaw); // Sanitize the content
 
                 if (!isValidPromptName(promptName)) {
                     alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
@@ -108,35 +144,35 @@
                 success: function (prompts) {
                     $('#promptsRow').empty();
                     prompts.forEach(function (prompt, index) {
-                        var fullContent = prompt.content;
-                        var truncatedContent = prompt.content.substring(0, 100) + '...';
-                        var isLongPrompt = prompt.content.length > 100;
+                        var truncatedContent = prompt.content.length > 80 ? prompt.content.substring(0, 80) + '...' : prompt.content;
                         var promptCard = `
-                    <div class="col-md-12 mb-2">
-                        <div class="card h-200">
-                            <div class="card-body d-flex flex-column">
-                                <h3 class="card-title" id="promptName${index}">${prompt.name}</h3>
-                                <h5 class="card-title" id="promptDescription${index}">${prompt.description}</h5>
-                                <p class="card-text" id="promptContent${index}" data-full-content="${fullContent}" data-truncated-content="${truncatedContent}">
-                                    ${truncatedContent}
-                                </p>
-                                <div id="menuOptions${index}" style="display: none;">
-                                    ${isLongPrompt ? `<button class="btn btn-info mt-auto" onclick="togglePromptContent(${index})" id="toggleButton${index}">Expand</button>` : ''}
-                                    <button class="btn btn-primary mt-2" onclick="showEditForm(${index})">Edit</button>
-                                    <button class="btn btn-danger mt-2" onclick="deletePrompt('${prompt._id}')">Delete</button>
-                                </div>
-                                <div id="editForm${index}" style="display: none;">
-                                    <input type="text" id="editDescription${index}" class="form-control mb-2" style="display:none;">
-                                    <textarea id="editContent${index}" class="form-control mb-2">${prompt.content}</textarea>
-                                    <button class="btn btn-success" onclick="updatePrompt('${prompt._id}', ${index})">Save</button>
-                                    <button class="btn btn-warning" onclick="closeEditForm(${index})">Close without saving</button>
-                                </div>
-                                <button id="menuButton${index}" class="btn btn-secondary mt-2" onclick="toggleMenuOptions(${index})">Menu</button>
+                <div class="col-md-12 mb-2">
+                    <div class="card h-200">
+                        <div class="card-body d-flex flex-column">
+                            <h3 class="card-title" id="promptName${index}">${prompt.name}</h3>
+                            <h5 class="card-title" id="promptDescription${index}">${prompt.description}</h5>
+                            <div class="card-text" id="promptContent${index}">${truncatedContent}</div>
+                            <div id="menuOptions${index}" style="display: none;">
+                                <button class="btn btn-secondary mt-2" id="expandButton${index}" onclick="toggleContent(${index})">Expand</button>
+                                <button class="btn btn-primary mt-2" onclick="showEditForm(${index})">Edit</button>
+                                <button class="btn btn-danger mt-2" onclick="deletePrompt('${prompt._id}')">Delete</button>
                             </div>
+                            <div id="editForm${index}" style="display: none;">
+                                <input type="text" id="editDescription${index}" class="form-control mb-2" style="display:none;">
+                                <textarea id="editContent${index}" class="form-control mb-2">${prompt.content}</textarea>
+                                <button class="btn btn-success" onclick="updatePrompt('${prompt._id}', ${index})">Save</button>
+                                <button class="btn btn-warning" onclick="closeEditForm(${index})">Close without saving</button>
+                            </div>
+                            <button id="menuButton${index}" class="btn btn-secondary mt-2" onclick="toggleMenuOptions(${index})">Menu</button>
                         </div>
                     </div>
-                `;
+                </div>`;
                         $('#promptsRow').append(promptCard);
+                        $('#promptContent' + index).data('full-content', prompt.content);
+                        $('#promptContent' + index).data('is-expanded', false); // Initialize expanded state as false
+                        console.log($('<div/>').html(prompt.content).text());
+
+
                     });
                 },
                 error: function (error) {
@@ -144,6 +180,25 @@
                 }
             });
         }
+
+        function toggleContent(index) {
+            var contentElement = $('#promptContent' + index);
+            var fullContent = contentElement.data('full-content');
+            var isExpanded = contentElement.data('is-expanded') || false;
+
+            if (isExpanded) {
+                // Collapse content
+                contentElement.html(fullContent.substring(0, 100) + '...');
+                contentElement.data('is-expanded', false);
+                $('#expandButton' + index).text('Expand');
+            } else {
+                // Expand content
+                contentElement.html(fullContent);
+                contentElement.data('is-expanded', true);
+                $('#expandButton' + index).text('Hide');
+            }
+        }
+
 
         function showEditForm(index) {
             $("#editForm" + index).show();
@@ -158,11 +213,22 @@
 
             $("#editDescription" + index).val(currentDescription).show(); // Show and set value for editDescription
             $("#editContent" + index).val(currentContent);
+            // Hide the standard content display and replace with Quill editor
+            $("#editForm" + index).show();
+            var currentContent = $("#promptContent" + index).html(); // Get current HTML content
+            $("#editContent" + index).replaceWith('<div id="quillEditor' + index + '"></div>'); // Replace textarea with a div for Quill
+
+            // Initialize Quill on the new div
+            var quillEditor = new Quill('#quillEditor' + index, {
+                theme: 'snow'
+            });
+            quillEditor.root.innerHTML = currentContent; // Set the current content in Quill editor
         }
 
         function toggleMenuOptions(index) {
             $("#menuOptions" + index).toggle();
         }
+
 
         function closeEditForm(index) {
             $("#editForm" + index).hide();
@@ -176,30 +242,21 @@
             $("#promptDescription" + index).show();
         }
 
-        function togglePromptContent(index) {
-            var contentP = $("#promptContent" + index);
-            var isExpanded = contentP.text().includes('...'); // Check if the text is truncated
 
-            if (isExpanded) {
-                contentP.text(contentP.data("full-content"));
-                $("#toggleButton" + index).text("Hide");
-            } else {
-                contentP.text(contentP.data("truncated-content"));
-                $("#toggleButton" + index).text("Expand");
-            }
-        }
 
         function updatePrompt(promptId, index) {
-            var newName = $("#editName" + index).val();
-            var newContent = $("#editContent" + index).val();
+            var newName = $("#editName" + index).val();  // This seems to be unused in Flask endpoint.
             var newDescription = $("#editDescription" + index).val();
+
+            // Retrieve the content from Quill editor
+            var quillEditor = Quill.find(document.querySelector('#quillEditor' + index));
+            var newContent = quillEditor.root.innerHTML;
 
             $.ajax({
                 url: '/api/prompt/' + promptId,
                 type: 'PUT',
                 contentType: 'application/json',
                 data: JSON.stringify({
-                    'name': newName,
                     'content': newContent,
                     'description': newDescription,
                 }),
@@ -212,6 +269,7 @@
                 }
             });
         }
+
 
         function isValidPromptName(name) {
             const regex = /^[a-zA-Z0-9_-]+$/;
