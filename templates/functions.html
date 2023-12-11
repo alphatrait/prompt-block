@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Your prompt App</title>
+    <title>Your Function Library</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
@@ -24,7 +24,7 @@
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Your App</a>
+        <a class="navbar-brand" href="#">Function Library</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -50,42 +50,47 @@
 
     <div class="container mt-4">
         <h2 style="margin-bottom:30px;">Manage Your Functions</h2>
-        <!-- Function Form -->
-        <form id="functionForm">
-            <!-- Function -->
-            <h4>Define your function</h4>
-            <div class="form-group">
-                <input type="text" class="form-control" id="functionName" placeholder="Enter function name">
-            </div>
-            <div class="form-group">
-                <input type="text" class="form-control" id="functionDescription"
-                    placeholder="Enter function description">
-            </div>
+        <p class="lead">A simple way to manage your functions.</p>
+        <button id="addNewFunctionBtn" class="btn btn-success mb-2" onclick="showFunctionForm()">Add New
+            Function</button>
+        <div id="functionFormContainer" style="display: none;">
+            <!-- Function Form -->
+            <form id="functionForm">
+                <!-- Function -->
+                <h4>Define your function</h4>
+                <div class="form-group">
+                    <input type="text" class="form-control" id="functionName" placeholder="Enter function name">
+                </div>
+                <div class="form-group">
+                    <input type="text" class="form-control" id="functionDescription"
+                        placeholder="Enter function description">
+                </div>
 
-            <!-- Parameters -->
-            <h4 style="margin-top:30px;">Parameters</h4>
-            <div class="form-group">
-                <label for="parameterType">Type</label>
-                <select class="form-control" id="parameterType">
-                    <option>Object</option>
-                    <!-- Add other options as needed -->
-                </select>
-            </div>
+                <!-- Parameters -->
+                <h4 style="margin-top:30px;">Parameters</h4>
+                <div class="form-group">
+                    <label for="parameterType">Type</label>
+                    <select class="form-control" id="parameterType">
+                        <option>Object</option>
+                        <!-- Add other options as needed -->
+                    </select>
+                </div>
 
-            <!-- Properties -->
-            <h4 style="margin-top:30px;">Properties</h4>
-            <div id="propertiesSection">
-                <!-- Dynamic properties will be added here -->
-            </div>
-            <div style="margin:20px 0;">
+                <!-- Properties -->
+                <h4 style="margin-top:30px;">Properties</h4>
+                <div id="propertiesSection">
+                    <!-- Dynamic properties will be added here -->
+                </div>
+                <div style="margin:20px 0;">
 
-                <button type="button" class="btn btn-info" onclick="addNewProperty()">Add New Property</button>
-            </div>
-            <!-- Submit -->
-            <div style="margin-bottom:100px;">
-                <button type="submit" class="btn btn-primary">Submit</button>
-            </div>
-        </form>
+                    <button type="button" class="btn btn-info" onclick="addNewProperty()">Add New Property</button>
+                </div>
+                <!-- Submit -->
+                <div style="margin-bottom:100px;">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
         <!-- After the form in your HTML -->
         <div class="container mt-4" id="functionsContainer">
             <div class="row" id="functionsRow">
@@ -137,6 +142,11 @@
             }
         }
 
+        function showFunctionForm() {
+            $('#functionFormContainer').show();
+            $('#addNewFunctionBtn').hide();
+        }
+
 
         $('#functionForm').on('submit', function (e) {
             e.preventDefault();
@@ -148,9 +158,9 @@
 
 
             if (!isValidPromptName(functionName)) {
-                    alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
-                    return; // Stop the form submission
-                }
+                alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
+                return; // Stop the form submission
+            }
 
             // Collect properties
             var properties = [];
@@ -159,7 +169,7 @@
                 var propertyType = $(this).find('.propertyType').val();
                 var propertyDescription = $(this).find('.propertyDescription').val();
                 var propertyRequired = $(this).find('.propertyRequired').is(':checked');
-                
+
                 if (!isValidPromptName(propertyName)) {
                     alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
                     return; // Stop the form submission
@@ -198,10 +208,17 @@
                     document.getElementById('functionForm').reset();
                     var propertiesSection = document.getElementById('propertiesSection');
                     propertiesSection.innerHTML = '';
+                    $('#functionForm')[0].reset();
+                    $('#functionFormContainer').hide();
+                    $('#addNewFunctionBtn').show();
                     fetchAndDisplayFunctions();
                 },
                 error: function (error) {
-                    console.log('Error:', error);
+                    if (error.status === 409) {
+                        alert("Function name already exists, please use a unique name.");
+                    } else {
+                        console.log('Error:', error);
+                    }
                 }
             });
         });

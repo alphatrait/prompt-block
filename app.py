@@ -50,13 +50,16 @@ def post_prompt():
         return jsonify({'error': 'User not authenticated'}), 401
 
     data = request.json
-    # Use the username from the session
     username = session['username']
+
+    # Check if prompt name already exists for the user
+    existing_prompt = prompts_collection.find_one({'user': username, 'name': data.get('name')})
+    if existing_prompt:
+        return jsonify({'error': 'Prompt name already exists, please use a unique name'}), 409
 
     sanitized_content = bleach.clean(data.get('content'), tags=ALLOWED_TAGS, strip=True)
     sanitized_description = bleach.clean(data.get('description'), tags=ALLOWED_TAGS, strip=True)
 
-    # Save the prompt with the username from the session
     prompt_data = {
         'user': username,
         'name': data.get('name'),
@@ -215,7 +218,11 @@ def post_function():
     data = request.json
     username = session['username']
 
-    # Create the function data structure
+    # Check if function name already exists for the user
+    existing_function = functions_collection.find_one({'user': username, 'name': data.get('name')})
+    if existing_function:
+        return jsonify({'error': 'Function name already exists, please use a unique name'}), 409
+
     function_data = {
         'user': username,
         'name': data.get('name'),
@@ -224,10 +231,9 @@ def post_function():
         'properties': data.get('properties', []),
         'timestamp': datetime.utcnow()
     }
-
-    # Insert the new function into the collection
     functions_collection.insert_one(function_data)
     return jsonify({'message': 'Function saved'}), 200
+
 
 
 @app.route('/api/functions', methods=['GET'])
