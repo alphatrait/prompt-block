@@ -158,7 +158,7 @@
 
 
             if (!isValidPromptName(functionName)) {
-                alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
+                alert("Function name can only contain uppercase, lowercase, numbers, underscore, and dash.");
                 return; // Stop the form submission
             }
 
@@ -171,12 +171,7 @@
                 var propertyRequired = $(this).find('.propertyRequired').is(':checked');
 
                 if (!isValidPromptName(propertyName)) {
-                    alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
-                    return; // Stop the form submission
-                }
-
-                if (!isValidPromptName(propertyDescription)) {
-                    alert("Prompt name can only contain uppercase, lowercase, numbers, underscore, and dash.");
+                    alert("Function name can only contain uppercase, lowercase, numbers, underscore, and dash.");
                     return; // Stop the form submission
                 }
 
