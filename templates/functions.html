@@ -103,35 +103,45 @@
         function addNewProperty() {
             var propertiesSection = document.getElementById('propertiesSection');
             var propertyIndex = document.getElementsByClassName('property').length;
+
             var propertyDiv = document.createElement('div');
             propertyDiv.className = 'property';
             propertyDiv.id = 'property' + propertyIndex;
 
             propertyDiv.innerHTML = `
-                <div class="form-group">
-                    <label>Property Name</label>
-                    <input type="text" class="form-control propertyName" placeholder="Enter property name">
-                </div>
-                <div class="form-group">
-                    <label>Property Type</label>
-                    <select class="form-control propertyType">
-                        <option>string</option>
-                        <option>number</option>
-                        <option>array</option>
-                        <!-- Add other options as needed -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Property Description</label>
-                    <input type="text" class="form-control propertyDescription" placeholder="Enter property description">
-                </div>
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input propertyRequired">
-                    <label class="form-check-label">Required</label>
-                </div>
-                <button type="button" class="btn btn-danger" onclick="removeProperty('${propertyIndex}')">Remove</button>
-                `;
-
+        <div class="form-group">
+            <label>Property Name</label>
+            <input type="text" class="form-control propertyName" placeholder="Enter property name">
+        </div>
+        <div class="form-group">
+            <label>Property Type</label>
+            <select class="form-control propertyType">
+                <option>string</option>
+                <option>number</option>
+                <option>array</option>
+                <!-- Add other options as needed -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Property Description</label>
+            <input type="text" class="form-control propertyDescription" placeholder="Enter property description">
+        </div>
+        <div class="items" style="display: none;">
+            <div class="form-group">
+                <label>Items Type</label>
+                <select class="form-control itemsType">
+                    <option>string</option>
+                    <option>number</option>
+                    <!-- Add other options as needed -->
+                </select>
+            </div>
+        </div>
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input propertyRequired">
+            <label class="form-check-label">Required</label>
+        </div>
+        <button type="button" class="btn btn-danger" onclick="removeProperty('${propertyIndex}')">Remove</button>
+    `;
             propertiesSection.appendChild(propertyDiv);
         }
 
@@ -146,6 +156,16 @@
             $('#functionFormContainer').show();
             $('#addNewFunctionBtn').hide();
         }
+
+        $(document).on('change', '.propertyType', function () {
+            var propertyDiv = $(this).closest('.property');
+            var itemsDiv = propertyDiv.find('.items');
+            if ($(this).val() === 'array') {
+                itemsDiv.show();
+            } else {
+                itemsDiv.hide();
+            }
+        });
 
 
         $('#functionForm').on('submit', function (e) {
@@ -170,18 +190,24 @@
                 var propertyDescription = $(this).find('.propertyDescription').val();
                 var propertyRequired = $(this).find('.propertyRequired').is(':checked');
 
-                if (!isValidPromptName(propertyName)) {
-                    alert("Function name can only contain uppercase, lowercase, numbers, underscore, and dash.");
-                    return; // Stop the form submission
+                // New code for handling 'array' type properties
+                if (propertyType === 'array') {
+                    var itemsType = $(this).find('.itemsType').val();
+                    properties.push({
+                        name: propertyName,
+                        type: propertyType,
+                        items: { type: itemsType },
+                        description: propertyDescription,
+                        required: propertyRequired
+                    });
+                } else {
+                    properties.push({
+                        name: propertyName,
+                        type: propertyType,
+                        description: propertyDescription,
+                        required: propertyRequired
+                    });
                 }
-
-
-                properties.push({
-                    name: propertyName,
-                    type: propertyType,
-                    description: propertyDescription,
-                    required: propertyRequired
-                });
             });
 
             // Construct function data

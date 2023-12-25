@@ -223,12 +223,19 @@ def post_function():
     if existing_function:
         return jsonify({'error': 'Function name already exists, please use a unique name'}), 409
 
+    # Process 'properties' to handle 'items' for array types
+    properties = data.get('properties', [])
+    for prop in properties:
+        if prop.get('type') == 'array' and 'items' in prop:
+            # Ensure 'items' is stored correctly
+            prop['items'] = prop['items']
+
     function_data = {
         'user': username,
         'name': data.get('name'),
         'description': data.get('description'),
         'parameterType': data.get('parameterType'),
-        'properties': data.get('properties', []),
+        'properties': properties,
         'timestamp': datetime.utcnow()
     }
     functions_collection.insert_one(function_data)
@@ -288,7 +295,9 @@ def get_function_by_name():
 
     properties = function.get('properties', [])
     properties_str = ", ".join(
-        f'"{prop["name"]}": {{"type": "{prop["type"]}", "description": "{prop["description"]}"}}'
+        f'"{prop["name"]}": {{"type": "{prop["type"]}"' +
+        (f', "items": {json.dumps(prop["items"])}' if "items" in prop and prop["type"] == "array" else "") +
+        f', "description": "{prop["description"]}"}}'
         for prop in properties
     )
 
