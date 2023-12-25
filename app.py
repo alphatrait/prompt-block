@@ -44,6 +44,12 @@ ALLOWED_TAGS = [
     'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'u', 'ul'
 ]
 
+# Test Endpoint
+@app.route("/test", methods=['GET'])
+def test():
+        return {"message": "You are awesome!"}, 200
+    
+
 @app.route('/api/prompt', methods=['POST'])
 def post_prompt():
     if 'username' not in session:
